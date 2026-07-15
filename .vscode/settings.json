@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 100,
+            "driver": "SQLite",
+            "name": "My Test Database",
+            "database": "${workspaceFolder:FastAPI}/mytestdb.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}
