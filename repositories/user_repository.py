@@ -9,16 +9,20 @@ class UserRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def create(self, username: str, password: str) -> User:
+    async def create(
+        self,
+        username: str,
+        password: str,
+    ) -> User | None:
+        user = await self.get_by_username(username)
+        if user is None:
+            new_user = User(username=username, password=password)
+            self.db_session.add(new_user)
+            await self.db_session.commit()
+            await self.db_session.refresh(new_user)
 
-        user = User(username=username, password=password)
-
-        self.db_session.add(user)
-
-        await self.db_session.commit()
-        await self.db_session.refresh(user)
-
-        return user
+            return new_user
+        return None
 
     async def get_by_username(self, username: str) -> User | None:
 

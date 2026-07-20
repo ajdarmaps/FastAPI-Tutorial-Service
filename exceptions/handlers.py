@@ -1,7 +1,7 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from exceptions import UserNotFoundError, InvalidUsernamePassword
+from exceptions import UserNotFoundError, InvalidUsernamePassword, UserAlreadyExistsError
 
 
 async def user_not_found_handler(request: Request, exc: Exception):
@@ -22,3 +22,18 @@ async def invalid_username_password_handler(
     assert isinstance(exc, InvalidUsernamePassword)
 
     return JSONResponse(status_code=401, content={"detail": str(exc)})
+
+
+async def user_already_exists_handler(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+
+    assert isinstance(exc, UserAlreadyExistsError)
+
+    return JSONResponse(
+        status_code=409,
+        content={
+            "detail": str(exc),
+        },
+    )
