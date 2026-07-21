@@ -76,3 +76,4 @@ class UserRepository:
         await self.db_session.commit()
 
         return user
+        

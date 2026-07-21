@@ -4,7 +4,7 @@ from typing import Annotated
 from db.engine import get_db
 from operations.users import UsersOperation
 from schema._input import (
-    RegisterInput,
+    UserInput,
     UpdateUserProfileInput,
     DeleteUserAccountInput,
 )
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/register")
 async def register(
     db_session: Annotated[AsyncSession, Depends(get_db)],
-    data: RegisterInput = Body(),
+    data: UserInput = Body(),
 ):
     user_repository = UserRepository(db_session)
     user = await UsersOperation(user_repository).create(
@@ -27,7 +27,15 @@ async def register(
 
 
 @router.post("/login")
-async def login(): ...
+async def login(
+    db_session: Annotated[AsyncSession, Depends(get_db)],
+    data: UserInput = Body(),
+):
+    user_repository = UserRepository(db_session)
+    token = await UsersOperation(user_repository).login(
+        username=data.username, password=data.password
+    )
+    return token
 
 
 @router.get("/{username}")

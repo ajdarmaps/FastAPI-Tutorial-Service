@@ -51,3 +51,15 @@ class UsersOperation:
         if user_delete is None:
             raise InvalidUsernamePassword("Invalid username or password")
         return user_delete
+
+    async def login(
+        self,
+        username: str,
+        password: str,
+    ) -> str:
+        user = await self.user_repository.get_by_username(username)
+        if user is None:
+            raise InvalidUsernamePassword("Invalid username or password")
+        if not password_manager.verify(password, user.password):
+            raise InvalidUsernamePassword("Invalid username or password")
+        return "Ok"
