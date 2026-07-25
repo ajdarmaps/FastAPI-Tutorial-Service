@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(user_router, prefix="/users")
+app.include_router(user_router, prefix="/api/users")
 
 app.add_exception_handler(
     UserNotFoundError,

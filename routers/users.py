@@ -1,75 +1,79 @@
-from fastapi import APIRouter, Body, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Annotated
-from db.engine import get_db
-from operations.users import UsersOperation
+from fastapi import APIRouter, Body
 from schema._input import (
     UserInput,
     UpdateUserProfileInput,
     DeleteUserAccountInput,
 )
-from repositories.user_repository import UserRepository
+from schema.output import UserOutput
+from dependencies.services import UsersOperationDep
+from dependencies.security import CurrentUser
 
 router = APIRouter()
 
 
-@router.post("/register")
+@router.post(
+    "/register",
+    response_model=UserOutput,
+)
 async def register(
-    db_session: Annotated[AsyncSession, Depends(get_db)],
+    operation: UsersOperationDep,
     data: UserInput = Body(),
 ):
-    user_repository = UserRepository(db_session)
-    user = await UsersOperation(user_repository).create(
+    return await operation.create(
         username=data.username,
         password=data.password,
     )
-    return user
 
 
 @router.post("/login")
 async def login(
-    db_session: Annotated[AsyncSession, Depends(get_db)],
+    operation: UsersOperationDep,
     data: UserInput = Body(),
 ):
-    user_repository = UserRepository(db_session)
-    token = await UsersOperation(user_repository).login(
-        username=data.username, password=data.password
+    return await operation.login(
+        username=data.username,
+        password=data.password,
     )
-    return token
 
 
-@router.get("/{username}")
-async def get_user_profile(
-    db_session: Annotated[AsyncSession, Depends(get_db)],
-    username: str,
-):
-    user_repository = UserRepository(db_session)
-    user_profile = await UsersOperation(user_repository).get_user_by_username(username)
-
-    return user_profile
-
-
-@router.put("/")
+@router.put("/profile")
 async def update_user_profile(
-    db_session: Annotated[AsyncSession, Depends(get_db)],
-    data: UpdateUserProfileInput = Body(),
+    operation: UsersOperationDep,
+    data: UpdateUserProfileInput,
 ):
-    user_repository = UserRepository(db_session)
-    user_profile = await UsersOperation(user_repository).update_user_profile(
+    return await operation.update_user_profile(
         old_username=data.old_username,
         new_username=data.new_username,
     )
 
-    return user_profile
-
 
 @router.delete("/", status_code=204)
 async def delete_user_account(
-    db_session: Annotated[AsyncSession, Depends(get_db)],
-    data: DeleteUserAccountInput = Body(),
+    operation: UsersOperationDep,
+    current_user: CurrentUser,
+    data: DeleteUserAccountInput,
 ):
-    user_repository = UserRepository(db_session)
-    await UsersOperation(user_repository).delete_user_account(
-        username=data.username,
+    await operation.delete_user_account(
+        user_id=current_user.id,
         password=data.password,
+    )
+
+
+@router.get(
+    "/me",
+    response_model=UserOutput,
+)
+async def me(
+    current_user: CurrentUser,
+):
+    return current_user
+
+
+@router.get("/{username}", response_model=UserOutput)
+async def get_user_profile(
+    operation: UsersOperationDep,
+    username: str,
+):
+    return await operation.get_user_by_username(
+        username=username,
     )

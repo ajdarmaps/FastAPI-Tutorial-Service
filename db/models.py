@@ -7,4 +7,7 @@ class User(Base):
     __tablename__ = "users"
     password: Mapped[str] = mapped_column()
     username: Mapped[str] = mapped_column(unique=True)
-    id: Mapped[UUID] = mapped_column(primary_key=True, default_factory=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True,
+        default_factory=uuid4,
+    )

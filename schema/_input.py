@@ -12,5 +12,4 @@ class UpdateUserProfileInput(BaseModel):
 
 
 class DeleteUserAccountInput(BaseModel):
-    username: str
     password: str
