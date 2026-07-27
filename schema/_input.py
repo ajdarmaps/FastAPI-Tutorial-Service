@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Annotated
 
 
 class UserInput(BaseModel):
@@ -13,3 +14,14 @@ class UpdateUserProfileInput(BaseModel):
 
 class DeleteUserAccountInput(BaseModel):
     password: str
+
+
+class CreatePostInput(BaseModel):
+    title: Annotated[
+        str,
+        Field(min_length=3, max_length=255),
+    ]
+    content: Annotated[
+        str,
+        Field(min_length=10, max_length=50000),
+    ]
