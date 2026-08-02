@@ -15,5 +15,6 @@ class PostOutput(BaseModel):
     id: UUID
     title: str
     content: str
+    author_id: UUID
     created_at: datetime
     updated_at: datetime

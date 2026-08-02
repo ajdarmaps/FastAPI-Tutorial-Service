@@ -23,6 +23,7 @@ class Post(Base):
 
     author: Mapped["User"] = relationship(
         back_populates="posts",
+        init=False,
     )
 
     title: Mapped[str] = mapped_column(
@@ -43,12 +44,14 @@ class Post(Base):
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True),
         server_default=sa.func.now(),
+        init=False,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True),
         server_default=sa.func.now(),
         onupdate=sa.func.now(),
+        init=False,
     )
 
     id: Mapped[UUID] = mapped_column(

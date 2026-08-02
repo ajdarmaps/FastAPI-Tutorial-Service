@@ -1,9 +1,6 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
-
-from db.engine import Base, engine
 from routers.users import router as user_router
+from routers.posts import router as post_router
 
 from exceptions import (
     UserNotFoundError,
@@ -16,17 +13,17 @@ from exceptions.handlers import (
     invalid_username_password_handler,
 )
 
+app = FastAPI()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
+app.include_router(
+    user_router,
+    prefix="/api/users",
+)
+app.include_router(
+    post_router,
+    prefix="/api/posts",
+)
 
-
-app = FastAPI(lifespan=lifespan)
-
-app.include_router(user_router, prefix="/api/users")
 
 app.add_exception_handler(
     UserNotFoundError,

@@ -5,7 +5,7 @@ from schema._input import (
     DeleteUserAccountInput,
 )
 from schema.output import UserOutput
-from dependencies.services import UsersOperationDep
+from dependencies.operations import UsersOperationDep
 from dependencies.security import CurrentUser
 
 router = APIRouter()
