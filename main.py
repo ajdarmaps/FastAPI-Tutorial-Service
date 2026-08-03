@@ -6,11 +6,15 @@ from exceptions import (
     UserNotFoundError,
     InvalidUsernamePassword,
     UserAlreadyExistsError,
+    PostNotFoundError,
+    PermissionDeniedError,
 )
 from exceptions.handlers import (
     user_not_found_handler,
     user_already_exists_handler,
     invalid_username_password_handler,
+    post_not_found_handler,
+    permission_denied_handler
 )
 
 app = FastAPI()
@@ -38,4 +42,14 @@ app.add_exception_handler(
 app.add_exception_handler(
     InvalidUsernamePassword,
     invalid_username_password_handler,
+)
+
+app.add_exception_handler(
+    PostNotFoundError,
+    post_not_found_handler,
+)
+
+app.add_exception_handler(
+    PermissionDeniedError,
+    permission_denied_handler,
 )

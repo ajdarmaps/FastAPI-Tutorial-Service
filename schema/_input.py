@@ -25,3 +25,15 @@ class CreatePostInput(BaseModel):
         str,
         Field(min_length=10, max_length=50000),
     ]
+
+
+class UpdatePostInput(BaseModel):
+    title: Annotated[
+        str | None,
+        Field(min_length=3, max_length=255),
+    ] = None
+
+    content: Annotated[
+        str | None,
+        Field(min_length=10),
+    ] = None
