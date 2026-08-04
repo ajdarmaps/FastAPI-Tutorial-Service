@@ -3,12 +3,16 @@ import sqlalchemy as sa
 from uuid import UUID
 from core.hashing import password_manager
 from db.models import User
+from repositories.base_repository import BaseRepository
 
 
-class UserRepository:
+class UserRepository(BaseRepository):
 
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(
+        self,
+        db_session: AsyncSession,
+    ):
+        super().__init__(db_session)
 
     async def create(
         self,
@@ -65,17 +69,13 @@ class UserRepository:
         return user
 
 
-async def delete_user(
+async def delete(
     self,
     user_id: UUID,
     password: str,
 ) -> User | None:
 
-    result = await self.db_session.execute(
-        sa.select(User).where(
-            User.id == user_id
-        )
-    )
+    result = await self.db_session.execute(sa.select(User).where(User.id == user_id))
 
     user = result.scalar_one_or_none()
 

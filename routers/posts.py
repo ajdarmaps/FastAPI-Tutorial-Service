@@ -67,3 +67,17 @@ async def update_post(
         data=data,
         current_user_id=current_user.id,
     )
+
+@router.delete(
+    "/{post_id}",
+    status_code=204,
+)
+async def delete_post(
+    post_id: UUID,
+    operation: PostsOperationDep,
+    current_user: CurrentUser,
+):
+    await operation.delete_post(
+        post_id=post_id,
+        current_user_id=current_user.id,
+    )

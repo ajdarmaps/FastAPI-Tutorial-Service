@@ -4,11 +4,15 @@ from uuid import UUID
 from db.models import Post
 from schema._input import CreatePostInput, UpdatePostInput
 from collections.abc import Sequence
+from repositories.base_repository import BaseRepository
 
 
-class PostRepository:
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+class PostRepository(BaseRepository):
+    def __init__(
+        self,
+        db_session: AsyncSession,
+    ):
+        super().__init__(db_session)
 
     async def create(
         self,
@@ -77,3 +81,10 @@ class PostRepository:
         await self.db_session.refresh(post)
 
         return post
+
+    async def delete(
+        self,
+        post: Post,
+    ) -> None:
+        await self.db_session.delete(post)
+        await self.db_session.commit()

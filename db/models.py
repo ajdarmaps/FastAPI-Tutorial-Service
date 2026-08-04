@@ -9,6 +9,7 @@ class User(Base):
     __tablename__ = "users"
     posts: Mapped[list["Post"]] = relationship(
         back_populates="author",
+        init=False
     )
     password: Mapped[str] = mapped_column()
     username: Mapped[str] = mapped_column(unique=True)

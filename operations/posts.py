@@ -88,3 +88,18 @@ class PostsOperation:
             post=post,
             data=data,
         )
+
+    async def delete_post(
+        self,
+        post_id: UUID,
+        current_user_id: UUID,
+    ) -> None:
+
+        post = await self._get_owned_post(
+            post_id=post_id,
+            current_user_id=current_user_id,
+        )
+
+        await self.post_repository.delete(
+            post=post,
+        )
