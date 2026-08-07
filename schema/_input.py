@@ -37,3 +37,16 @@ class UpdatePostInput(BaseModel):
         str | None,
         Field(min_length=10),
     ] = None
+
+
+class PaginationInput(BaseModel):
+    page: int = Field(
+        default=1,
+        ge=1,
+    )
+
+    page_size: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+    )

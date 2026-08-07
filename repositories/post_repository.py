@@ -42,13 +42,16 @@ class PostRepository(BaseRepository):
     async def list_by_author_id(
         self,
         author_id: UUID,
+        offset: int,
+        limit: int,
     ) -> Sequence[Post]:
 
         result = await self.db_session.execute(
             sa.select(Post).where(
-                Post.author_id == author_id,
+                Post.author_id == author_id)
+                .offset(offset)
+                .limit(limit)
             )
-        )
 
         return result.scalars().all()
 

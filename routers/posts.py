@@ -4,6 +4,7 @@ from schema.output import PostOutput
 
 from dependencies.operations import PostsOperationDep
 from dependencies.security import CurrentUser
+from dependencies.pagination import PaginationDep
 
 from uuid import UUID
 
@@ -33,9 +34,11 @@ async def create_post(
 async def get_my_posts(
     operation: PostsOperationDep,
     current_user: CurrentUser,
+    pagination: PaginationDep,
 ):
     return await operation.get_my_posts(
         author_id=current_user.id,
+        pagination=pagination,
     )
 
 

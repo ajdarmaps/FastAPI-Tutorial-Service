@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from repositories.post_repository import PostRepository
-from schema._input import CreatePostInput, UpdatePostInput
+from schema._input import CreatePostInput, UpdatePostInput, PaginationInput
 from db.models import Post
 from collections.abc import Sequence
 
@@ -33,10 +33,16 @@ class PostsOperation:
     async def get_my_posts(
         self,
         author_id: UUID,
+        pagination: PaginationInput,
     ) -> Sequence[Post]:
+
+        limit = pagination.page_size
+        offset = (pagination.page - 1) * pagination.page_size
 
         return await self.post_repository.list_by_author_id(
             author_id=author_id,
+            offset=offset,
+            limit=limit,
         )
 
     async def get_post_by_id(
