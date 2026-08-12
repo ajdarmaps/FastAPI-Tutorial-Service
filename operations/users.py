@@ -35,19 +35,27 @@ class UsersOperation:
         old_username: str,
         new_username: str,
     ) -> User | None:
-        user_update = await self.user_repository.update_by_username(
-            old_username=old_username, new_username=new_username
-        )
-        if user_update is None:
+        user = await self.user_repository.get_by_username(old_username)
+
+        if user is None:
             raise UserNotFoundError("User not found")
-        return user_update
+
+        existing_user = await self.user_repository.get_by_username(new_username)
+
+        if existing_user is not None and existing_user.id != user.id:
+            raise UserAlreadyExistsError(f"Username '{new_username}' already exists")
+
+        return await self.user_repository.update_by_username(
+            old_username=old_username,
+            new_username=new_username,
+        )
 
     async def delete_user_account(
         self,
         user_id: UUID,
         password: str,
     ) -> User:
-        user_delete = await self.user_repository.delete_user(
+        user_delete = await self.user_repository.delete(
             user_id=user_id,
             password=password,
         )

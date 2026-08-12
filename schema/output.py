@@ -18,3 +18,17 @@ class PostOutput(BaseModel):
     author_id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class PaginationMeta(BaseModel):
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+
+
+class PaginatedPostsOutput(BaseModel):
+    items: list[PostOutput]
+    meta: PaginationMeta

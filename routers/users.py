@@ -36,24 +36,25 @@ async def login(
     )
 
 
-@router.put("/profile")
+@router.patch("/profile", response_model=UserOutput)
 async def update_user_profile(
     operation: UsersOperationDep,
-    data: UpdateUserProfileInput,
+    current_user: CurrentUser,
+    data: UpdateUserProfileInput = Body(),
 ):
     return await operation.update_user_profile(
-        old_username=data.old_username,
+        old_username=current_user.username,
         new_username=data.new_username,
     )
 
 
-@router.delete("/", status_code=204)
+@router.delete("/account")
 async def delete_user_account(
     operation: UsersOperationDep,
     current_user: CurrentUser,
-    data: DeleteUserAccountInput,
+    data: DeleteUserAccountInput = Body(),
 ):
-    await operation.delete_user_account(
+    return await operation.delete_user_account(
         user_id=current_user.id,
         password=data.password,
     )

@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy as sa
+from sqlalchemy import func, or_
 from uuid import UUID
 from db.models import Post
 from schema._input import CreatePostInput, UpdatePostInput
@@ -47,11 +48,15 @@ class PostRepository(BaseRepository):
     ) -> Sequence[Post]:
 
         result = await self.db_session.execute(
-            sa.select(Post).where(
-                Post.author_id == author_id)
-                .offset(offset)
-                .limit(limit)
+            sa.select(Post)
+            .where(Post.author_id == author_id)
+            .order_by(
+                Post.created_at.desc(),
+                Post.id.desc(),
             )
+            .offset(offset)
+            .limit(limit)
+        )
 
         return result.scalars().all()
 
@@ -73,21 +78,72 @@ class PostRepository(BaseRepository):
         post: Post,
         data: UpdatePostInput,
     ) -> Post:
-
         if data.title is not None:
             post.title = data.title
 
         if data.content is not None:
             post.content = data.content
 
-        await self.db_session.commit()
-        await self.db_session.refresh(post)
+        try:
+            await self.db_session.commit()
+            await self.db_session.refresh(post)
 
-        return post
+            return post
+
+        except Exception:
+            await self.db_session.rollback()
+            raise
 
     async def delete(
         self,
         post: Post,
     ) -> None:
-        await self.db_session.delete(post)
-        await self.db_session.commit()
+        try:
+            await self.db_session.delete(post)
+            await self.db_session.commit()
+
+        except Exception:
+            await self.db_session.rollback()
+            raise
+
+    async def list_public(
+        self,
+        search: str | None,
+        author_id: UUID | None,
+        offset: int,
+        limit: int,
+    ) -> tuple[Sequence[Post], int]:
+        filters = []
+
+        if search:
+            pattern = f"%{search}%"
+            filters.append(
+                or_(
+                    Post.title.ilike(pattern),
+                    Post.content.ilike(pattern),
+                )
+            )
+
+        if author_id is not None:
+            filters.append(Post.author_id == author_id)
+        base_query = sa.select(Post)
+        
+        if filters:
+            base_query = base_query.where(*filters)
+
+        items_result = await self.db_session.execute(
+            base_query.order_by(Post.created_at.desc(), Post.id.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+        count_query = sa.select(func.count()).select_from(Post)
+        if filters:
+            count_query = count_query.where(*filters)
+
+        total_result = await self.db_session.execute(count_query)
+
+        return (
+            items_result.scalars().all(),
+            total_result.scalar_one(),
+        )

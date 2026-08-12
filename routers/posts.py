@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from schema._input import CreatePostInput, UpdatePostInput
-from schema.output import PostOutput
+from schema.output import PostOutput, PaginatedPostsOutput
 
 from dependencies.operations import PostsOperationDep
 from dependencies.security import CurrentUser
@@ -84,3 +84,21 @@ async def delete_post(
         post_id=post_id,
         current_user_id=current_user.id,
     )
+
+
+@router.get(
+    "/",
+    response_model=PaginatedPostsOutput,
+)
+async def list_public_posts(
+    operation: PostsOperationDep,
+    pagination: PaginationDep,
+    search: str | None = None,
+    author_id: UUID | None = None,
+):
+    return await operation.list_public_posts(
+        pagination=pagination,
+        search=search,
+        author_id=author_id,
+    )
+

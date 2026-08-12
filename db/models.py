@@ -7,10 +7,7 @@ from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
-    posts: Mapped[list["Post"]] = relationship(
-        back_populates="author",
-        init=False
-    )
+    posts: Mapped[list["Post"]] = relationship(back_populates="author", init=False)
     password: Mapped[str] = mapped_column()
     username: Mapped[str] = mapped_column(unique=True)
     id: Mapped[UUID] = mapped_column(
@@ -40,6 +37,7 @@ class Post(Base):
     author_id: Mapped[UUID] = mapped_column(
         sa.ForeignKey("users.id"),
         nullable=False,
+        index=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

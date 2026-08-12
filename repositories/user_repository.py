@@ -68,27 +68,26 @@ class UserRepository(BaseRepository):
 
         return user
 
+    async def delete(
+        self,
+        user_id: UUID,
+        password: str,
+    ) -> User | None:
 
-async def delete(
-    self,
-    user_id: UUID,
-    password: str,
-) -> User | None:
+        result = await self.db_session.execute(sa.select(User).where(User.id == user_id))
 
-    result = await self.db_session.execute(sa.select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
 
-    user = result.scalar_one_or_none()
+        if user is None:
+            return None
 
-    if user is None:
-        return None
+        if not password_manager.verify(
+            password,
+            user.password,
+        ):
+            return None
 
-    if not password_manager.verify(
-        password,
-        user.password,
-    ):
-        return None
+        await self.db_session.delete(user)
+        await self.db_session.commit()
 
-    await self.db_session.delete(user)
-    await self.db_session.commit()
-
-    return user
+        return user

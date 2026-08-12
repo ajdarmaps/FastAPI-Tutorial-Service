@@ -8,7 +8,6 @@ class UserInput(BaseModel):
 
 
 class UpdateUserProfileInput(BaseModel):
-    old_username: str
     new_username: str
 
 
@@ -35,7 +34,7 @@ class UpdatePostInput(BaseModel):
 
     content: Annotated[
         str | None,
-        Field(min_length=10),
+        Field(min_length=10, max_length=50000),
     ] = None
 
 

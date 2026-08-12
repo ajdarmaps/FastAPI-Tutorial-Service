@@ -4,6 +4,6 @@ class UserNotFoundError(Exception):
 
 
 class UserAlreadyExistsError(Exception):
-    status_code = 404
+    status_code = 409
     pass
 

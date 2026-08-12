@@ -109,3 +109,34 @@ class PostsOperation:
         await self.post_repository.delete(
             post=post,
         )
+
+    async def list_public_posts(
+        self,
+        pagination: PaginationInput,
+        search: str | None = None,
+        author_id: UUID | None = None,
+    ):
+        limit = pagination.page_size
+        offset = (pagination.page - 1) * pagination.page_size
+
+        items, total = await self.post_repository.list_public(
+            search=search,
+            author_id=author_id,
+            offset=offset,
+            limit=limit,
+        )
+
+        total_pages = (total + limit - 1) // limit if total > 0 else 1
+
+        return {
+            "items": items,
+            "meta": {
+                "page": pagination.page,
+                "page_size": limit,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": pagination.page < total_pages,
+                "has_previous": pagination.page > 1,
+            },
+        }
+
