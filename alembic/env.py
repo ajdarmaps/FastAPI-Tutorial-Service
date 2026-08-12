@@ -14,7 +14,7 @@ config = context.config
 
 config.set_main_option(
     "sqlalchemy.url",
-    settings.DATABASE_URL.replace("+aiosqlite", "")
+    settings.DATABASE_URL.replace("+asyncpg", "+psycopg")
 )
 
 # Interpret the config file for Python logging.
