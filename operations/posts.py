@@ -1,13 +1,16 @@
 from uuid import UUID
 
-from repositories.post_repository import PostRepository
-from schema._input import CreatePostInput, UpdatePostInput, PaginationInput
 from db.models import Post
-from collections.abc import Sequence
+from repositories.post_repository import PostRepository
+from schema._input import (
+    CreatePostInput,
+    PaginationInput,
+    UpdatePostInput,
+)
 
 from exceptions import (
-    PostNotFoundError,
     PermissionDeniedError,
+    PostNotFoundError,
 )
 
 
@@ -34,16 +37,31 @@ class PostsOperation:
         self,
         author_id: UUID,
         pagination: PaginationInput,
-    ) -> Sequence[Post]:
-
+        search: str | None = None,
+    ):
         limit = pagination.page_size
         offset = (pagination.page - 1) * pagination.page_size
 
-        return await self.post_repository.list_by_author_id(
+        items, total = await self.post_repository.list_by_author_id(
             author_id=author_id,
+            search=search,
             offset=offset,
             limit=limit,
         )
+
+        total_pages = (total + limit - 1) // limit if total > 0 else 1
+
+        return {
+            "items": items,
+            "meta": {
+                "page": pagination.page,
+                "page_size": limit,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": pagination.page < total_pages,
+                "has_previous": pagination.page > 1,
+            },
+        }
 
     async def get_post_by_id(
         self,
@@ -55,9 +73,7 @@ class PostsOperation:
         )
 
         if post is None:
-            raise PostNotFoundError(
-                "Post not found",
-            )
+            raise PostNotFoundError("Post not found")
 
         return post
 
@@ -106,9 +122,7 @@ class PostsOperation:
             current_user_id=current_user_id,
         )
 
-        await self.post_repository.delete(
-            post=post,
-        )
+        await self.post_repository.delete(post)
 
     async def list_public_posts(
         self,
@@ -117,7 +131,7 @@ class PostsOperation:
         author_id: UUID | None = None,
     ):
         limit = pagination.page_size
-        offset = (pagination.page - 1) * pagination.page_size
+        offset = (pagination.page - 1) * limit
 
         items, total = await self.post_repository.list_public(
             search=search,
@@ -126,17 +140,33 @@ class PostsOperation:
             limit=limit,
         )
 
-        total_pages = (total + limit - 1) // limit if total > 0 else 1
+        return self._build_paginated_response(
+            items=items,
+            page=pagination.page,
+            page_size=limit,
+            total=total,
+        )
+
+    @staticmethod
+    def _build_paginated_response(
+        items,
+        page: int,
+        page_size: int,
+        total: int,
+    ):
+        total_pages = max(
+            1,
+            (total + page_size - 1) // page_size,
+        )
 
         return {
             "items": items,
             "meta": {
-                "page": pagination.page,
-                "page_size": limit,
+                "page": page,
+                "page_size": page_size,
                 "total": total,
                 "total_pages": total_pages,
-                "has_next": pagination.page < total_pages,
-                "has_previous": pagination.page > 1,
+                "has_next": page < total_pages,
+                "has_previous": page > 1,
             },
         }
-

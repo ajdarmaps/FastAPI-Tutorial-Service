@@ -1,9 +1,10 @@
 from typing import Annotated
+
 from fastapi import Depends
 
-from repositories.user_repository import UserRepository
 from dependencies.database import DbSession
 from repositories.post_repository import PostRepository
+from repositories.user_repository import UserRepository
 
 
 def get_user_repository(

@@ -1,39 +1,52 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-import sqlalchemy as sa
 from uuid import UUID
-from core.hashing import password_manager
+
+import sqlalchemy as sa
+
 from db.models import User
 from repositories.base_repository import BaseRepository
+from sqlalchemy.exc import IntegrityError
 
 
 class UserRepository(BaseRepository):
-
-    def __init__(
-        self,
-        db_session: AsyncSession,
-    ):
-        super().__init__(db_session)
 
     async def create(
         self,
         username: str,
         password: str,
     ) -> User | None:
+
         user = await self.get_by_username(username)
-        if user is None:
-            new_user = User(username=username, password=password)
+
+        if user is not None:
+            return None
+
+        new_user = User(
+            username=username,
+            password=password,
+        )
+
+        try:
             self.db_session.add(new_user)
+
             await self.db_session.commit()
             await self.db_session.refresh(new_user)
 
             return new_user
-        return None
 
-    async def get_by_username(self, username: str) -> User | None:
+        except IntegrityError:
+            await self.db_session.rollback()
+            return None
 
-        query = sa.select(User).where(User.username == username)
+    async def get_by_username(
+        self,
+        username: str,
+    ) -> User | None:
 
-        result = await self.db_session.execute(query)
+        result = await self.db_session.execute(
+            sa.select(User).where(
+                User.username == username,
+            )
+        )
 
         return result.scalar_one_or_none()
 
@@ -41,9 +54,13 @@ class UserRepository(BaseRepository):
         self,
         user_id: UUID,
     ) -> User | None:
+
         result = await self.db_session.execute(
-            sa.select(User).where(User.id == user_id)
+            sa.select(User).where(
+                User.id == user_id,
+            )
         )
+
         return result.scalar_one_or_none()
 
     async def update_by_username(
@@ -53,7 +70,9 @@ class UserRepository(BaseRepository):
     ) -> User | None:
 
         result = await self.db_session.execute(
-            sa.select(User).where(User.username == old_username)
+            sa.select(User).where(
+                User.username == old_username,
+            )
         )
 
         user = result.scalar_one_or_none()
@@ -70,24 +89,13 @@ class UserRepository(BaseRepository):
 
     async def delete(
         self,
-        user_id: UUID,
-        password: str,
-    ) -> User | None:
+        user: User,
+    ) -> None:
 
-        result = await self.db_session.execute(sa.select(User).where(User.id == user_id))
+        try:
+            await self.db_session.delete(user)
+            await self.db_session.commit()
 
-        user = result.scalar_one_or_none()
-
-        if user is None:
-            return None
-
-        if not password_manager.verify(
-            password,
-            user.password,
-        ):
-            return None
-
-        await self.db_session.delete(user)
-        await self.db_session.commit()
-
-        return user
+        except Exception:
+            await self.db_session.rollback()
+            raise

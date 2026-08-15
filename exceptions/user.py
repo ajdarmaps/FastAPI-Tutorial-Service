@@ -1,9 +1,9 @@
-class UserNotFoundError(Exception):
+from exceptions.base import BaseAppException
+
+
+class UserNotFoundError(BaseAppException):
     status_code = 404
-    pass
 
 
-class UserAlreadyExistsError(Exception):
+class UserAlreadyExistsError(BaseAppException):
     status_code = 409
-    pass
-

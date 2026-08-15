@@ -1,8 +1,5 @@
-class InvalidUsernamePassword(Exception):
-    status_code = 404
-    pass
+from exceptions.base import BaseAppException
 
 
-class PermissionDeniedError(Exception):
-    status_code = 403
-    pass
+class InvalidUsernamePassword(BaseAppException):
+    status_code = 401

@@ -1,76 +1,145 @@
-from repositories.user_repository import UserRepository
-from db.models import User
+from uuid import UUID
+
 from core.hashing import password_manager
+from core.security import JWTHandler
+from db.models import User
 from exceptions import (
-    UserNotFoundError,
     InvalidUsernamePassword,
     UserAlreadyExistsError,
+    UserNotFoundError,
 )
-from schema.output import UserOutput
-from core.security import JWTHandler
+from repositories.user_repository import UserRepository
 from schema.jwt import JWTResponsePayload
-from uuid import UUID
 
 
 class UsersOperation:
 
-    def __init__(self, user_repository: UserRepository):
+    def __init__(
+        self,
+        user_repository: UserRepository,
+    ):
         self.user_repository = user_repository
 
-    async def create(self, username: str, password: str) -> UserOutput:
-        user_pwd = password_manager.hash(password)
-        created_user = await self.user_repository.create(username, user_pwd)
-        if created_user is None:
-            raise UserAlreadyExistsError("Username already exists")
-        return UserOutput.model_validate(created_user)
+    async def create(
+        self,
+        username: str,
+        password: str,
+    ) -> User:
 
-    async def get_user_by_username(self, username: str) -> User:
-        user = await self.user_repository.get_by_username(username)
+        hashed_password = password_manager.hash(password)
+
+        user = await self.user_repository.create(
+            username=username,
+            password=hashed_password,
+        )
+
         if user is None:
-            raise UserNotFoundError("User not found")
+            raise UserAlreadyExistsError(
+                "Username already exists"
+            )
+
+        return user
+
+    async def get_user_by_username(
+        self,
+        username: str,
+    ) -> User:
+
+        user = await self.user_repository.get_by_username(
+            username
+        )
+
+        if user is None:
+            raise UserNotFoundError(
+                "User not found"
+            )
+
         return user
 
     async def update_user_profile(
         self,
         old_username: str,
         new_username: str,
-    ) -> User | None:
-        user = await self.user_repository.get_by_username(old_username)
+    ) -> User:
 
-        if user is None:
-            raise UserNotFoundError("User not found")
+        user = await self.get_user_by_username(
+            old_username
+        )
 
-        existing_user = await self.user_repository.get_by_username(new_username)
+        existing_user = await self.user_repository.get_by_username(
+            new_username
+        )
 
-        if existing_user is not None and existing_user.id != user.id:
-            raise UserAlreadyExistsError(f"Username '{new_username}' already exists")
+        if (
+            existing_user is not None
+            and existing_user.id != user.id
+        ):
+            raise UserAlreadyExistsError(
+                f"Username '{new_username}' already exists"
+            )
 
-        return await self.user_repository.update_by_username(
+        updated_user = await self.user_repository.update_by_username(
             old_username=old_username,
             new_username=new_username,
         )
+
+        if updated_user is None:
+            raise UserNotFoundError(
+                "User not found"
+            )
+
+        return updated_user
 
     async def delete_user_account(
         self,
         user_id: UUID,
         password: str,
     ) -> User:
-        user_delete = await self.user_repository.delete(
+
+        user = await self.user_repository.get_by_id(
             user_id=user_id,
-            password=password,
         )
-        if user_delete is None:
-            raise InvalidUsernamePassword("Invalid username or password")
-        return user_delete
+
+        if user is None:
+            raise UserNotFoundError(
+                "User not found"
+            )
+
+        if not password_manager.verify(
+            password,
+            user.password,
+        ):
+            raise InvalidUsernamePassword(
+                "Invalid username or password"
+            )
+
+        await self.user_repository.delete(
+            user=user,
+        )
+
+        return user
 
     async def login(
         self,
         username: str,
         password: str,
     ) -> JWTResponsePayload:
-        user = await self.user_repository.get_by_username(username)
+
+        user = await self.user_repository.get_by_username(
+            username
+        )
+
         if user is None:
-            raise InvalidUsernamePassword("Invalid username or password")
-        if not password_manager.verify(password, user.password):
-            raise InvalidUsernamePassword("Invalid username or password")
+            raise InvalidUsernamePassword(
+                "Invalid username or password"
+            )
+
+        if not password_manager.verify(
+            password,
+            user.password,
+        ):
+            raise InvalidUsernamePassword(
+                "Invalid username or password"
+            )
+
         return JWTHandler.generate(user.id)
