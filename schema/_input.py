@@ -1,14 +1,22 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 from typing import Annotated
+
+Username = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=3,
+    ),
+]
 
 
 class UserInput(BaseModel):
-    username: str
+    username: Username
     password: str
 
 
 class UpdateUserProfileInput(BaseModel):
-    new_username: str
+    new_username: Username
 
 
 class DeleteUserAccountInput(BaseModel):

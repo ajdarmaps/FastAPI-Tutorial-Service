@@ -16,9 +16,10 @@ class PostOutput(BaseModel):
     title: str
     content: str
     author_id: UUID
+    author: AuthorOutput
     created_at: datetime
     updated_at: datetime
-
+    
 
 class PaginationMeta(BaseModel):
     page: int
@@ -32,3 +33,10 @@ class PaginationMeta(BaseModel):
 class PaginatedPostsOutput(BaseModel):
     items: list[PostOutput]
     meta: PaginationMeta
+
+
+class AuthorOutput(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    username: str

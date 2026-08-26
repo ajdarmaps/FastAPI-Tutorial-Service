@@ -4,10 +4,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.security import JWTHandler
-from db.models import User
-from dependencies.repositories import UserRepositoryDep
+from db.models import User, UserRole
+from dependencies.unit_of_work import UnitOfWorkDep
 from schema.jwt import JWTPayload
-
+from exceptions import PermissionDeniedError
 
 security_scheme = HTTPBearer()
 
@@ -25,10 +25,10 @@ CurrentToken = Annotated[
 
 
 async def get_current_user(
-    user_repository: UserRepositoryDep,
+    uow: UnitOfWorkDep,
     payload: CurrentToken,
 ) -> User:
-    user = await user_repository.get_by_id(payload.sub)
+    user = await uow.users.get_by_id(payload.sub)
 
     if user is None:
         raise HTTPException(
@@ -39,7 +39,22 @@ async def get_current_user(
     return user
 
 
+async def require_admin(
+    current_user: CurrentUser,
+) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise PermissionDeniedError(
+            "Admin permission required."
+        )
+
+    return current_user
+
 CurrentUser = Annotated[
     User,
     Depends(get_current_user),
+]
+
+AdminUser = Annotated[
+    User,
+    Depends(require_admin),
 ]

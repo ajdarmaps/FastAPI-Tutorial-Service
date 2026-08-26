@@ -1,7 +1,8 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, BackgroundTasks
+from services.notifications import send_welcome_notification
 
 from dependencies.operations import UsersOperationDep
-from dependencies.security import CurrentUser
+from dependencies.security import CurrentUser, AdminUser
 from schema._input import (
     DeleteUserAccountInput,
     UpdateUserProfileInput,
@@ -9,7 +10,6 @@ from schema._input import (
 )
 from schema.jwt import JWTResponsePayload
 from schema.output import UserOutput
-
 
 router = APIRouter()
 
@@ -22,11 +22,19 @@ router = APIRouter()
 async def register(
     operation: UsersOperationDep,
     data: UserInput,
+    background_tasks: BackgroundTasks,
 ) -> UserOutput:
-    return await operation.create(
+    user = await operation.create(
         username=data.username,
         password=data.password,
     )
+
+    background_tasks.add_task(
+        send_welcome_notification,
+        user.username,
+    )
+
+    return UserOutput.model_validate(user)
 
 
 @router.post(
@@ -81,6 +89,17 @@ async def me(
     current_user: CurrentUser,
 ) -> UserOutput:
     return current_user
+
+
+@router.get(
+    "/",
+    response_model=list[UserOutput],
+)
+async def list_users(
+    operation: UsersOperationDep,
+    current_user: AdminUser,
+) -> list[UserOutput]:
+    return await operation.get_all_users()
 
 
 @router.get(

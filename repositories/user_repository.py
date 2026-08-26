@@ -4,7 +4,6 @@ import sqlalchemy as sa
 
 from db.models import User
 from repositories.base_repository import BaseRepository
-from sqlalchemy.exc import IntegrityError
 
 
 class UserRepository(BaseRepository):
@@ -25,17 +24,12 @@ class UserRepository(BaseRepository):
             password=password,
         )
 
-        try:
-            self.db_session.add(new_user)
+        self.db_session.add(new_user)
 
-            await self.db_session.commit()
-            await self.db_session.refresh(new_user)
+        await self.db_session.flush()
+        await self.db_session.refresh(new_user)
 
-            return new_user
-
-        except IntegrityError:
-            await self.db_session.rollback()
-            return None
+        return new_user
 
     async def get_by_username(
         self,
@@ -82,7 +76,7 @@ class UserRepository(BaseRepository):
 
         user.username = new_username
 
-        await self.db_session.commit()
+        await self.db_session.flush()
         await self.db_session.refresh(user)
 
         return user
@@ -92,10 +86,12 @@ class UserRepository(BaseRepository):
         user: User,
     ) -> None:
 
-        try:
-            await self.db_session.delete(user)
-            await self.db_session.commit()
+        await self.db_session.delete(user)
+        await self.db_session.flush()
 
-        except Exception:
-            await self.db_session.rollback()
-            raise
+    async def list_users(self) -> list[User]:
+        result = await self.db_session.execute(
+            sa.select(User).order_by(User.username)
+        )
+
+        return list(result.scalars().all())

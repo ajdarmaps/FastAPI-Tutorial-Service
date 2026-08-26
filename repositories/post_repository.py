@@ -4,8 +4,10 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, raiseload
 
-from db.models import Post
+
+from db.models import Post, User
 from repositories.base_repository import BaseRepository
 from schema._input import CreatePostInput, UpdatePostInput
 
@@ -30,17 +32,12 @@ class PostRepository(BaseRepository):
             author_id=author_id,
         )
 
-        try:
-            self.db_session.add(post)
+        self.db_session.add(post)
 
-            await self.db_session.commit()
-            await self.db_session.refresh(post)
+        await self.db_session.flush()
+        await self.db_session.refresh(post)
 
-            return post
-
-        except Exception:
-            await self.db_session.rollback()
-            raise
+        return post
 
     async def _list(
         self,
@@ -51,6 +48,14 @@ class PostRepository(BaseRepository):
 
         query = (
             sa.select(Post)
+            .options(
+                joinedload(Post.author).load_only(
+                    User.id,
+                    User.username,
+                    raiseload=True,
+                ),
+                raiseload("*"),
+            )
             .where(*filters)
             .order_by(
                 Post.created_at.desc(),
@@ -136,7 +141,16 @@ class PostRepository(BaseRepository):
     ) -> Post | None:
 
         result = await self.db_session.execute(
-            sa.select(Post).where(
+            sa.select(Post)
+            .options(
+                joinedload(Post.author).load_only(
+                    User.id,
+                    User.username,
+                    raiseload=True,
+                ),
+                raiseload("*"),
+            )
+            .where(
                 Post.id == post_id,
             )
         )
@@ -155,25 +169,15 @@ class PostRepository(BaseRepository):
         if data.content is not None:
             post.content = data.content
 
-        try:
-            await self.db_session.commit()
-            await self.db_session.refresh(post)
+        await self.db_session.flush()
+        await self.db_session.refresh(post)
 
-            return post
-
-        except Exception:
-            await self.db_session.rollback()
-            raise
+        return post
 
     async def delete(
         self,
         post: Post,
     ) -> None:
 
-        try:
-            await self.db_session.delete(post)
-            await self.db_session.commit()
-
-        except Exception:
-            await self.db_session.rollback()
-            raise
+        await self.db_session.delete(post)
+        await self.db_session.flush()

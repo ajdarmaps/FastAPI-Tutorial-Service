@@ -2,12 +2,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
-from dependencies.operations import PostsOperationDep
+from dependencies.operations import PostsServiceDep
 from dependencies.pagination import PaginationDep
 from dependencies.security import CurrentUser
 from schema._input import CreatePostInput, UpdatePostInput
 from schema.output import PaginatedPostsOutput, PostOutput
-
 
 router = APIRouter()
 
@@ -19,7 +18,7 @@ router = APIRouter()
 )
 async def create_post(
     data: CreatePostInput,
-    operation: PostsOperationDep,
+    operation: PostsServiceDep,
     current_user: CurrentUser,
 ) -> PostOutput:
     return await operation.create_post(
@@ -33,7 +32,7 @@ async def create_post(
     response_model=PaginatedPostsOutput,
 )
 async def get_my_posts(
-    operation: PostsOperationDep,
+    operation: PostsServiceDep,
     current_user: CurrentUser,
     pagination: PaginationDep,
     search: str | None = None,
@@ -51,7 +50,7 @@ async def get_my_posts(
 )
 async def get_post(
     post_id: UUID,
-    operation: PostsOperationDep,
+    operation: PostsServiceDep,
 ) -> PostOutput:
     return await operation.get_post_by_id(
         post_id=post_id,
@@ -65,7 +64,7 @@ async def get_post(
 async def update_post(
     post_id: UUID,
     data: UpdatePostInput,
-    operation: PostsOperationDep,
+    operation: PostsServiceDep,
     current_user: CurrentUser,
 ) -> PostOutput:
     return await operation.update_post(
@@ -81,7 +80,7 @@ async def update_post(
 )
 async def delete_post(
     post_id: UUID,
-    operation: PostsOperationDep,
+    operation: PostsServiceDep,
     current_user: CurrentUser,
 ) -> None:
     await operation.delete_post(
@@ -95,7 +94,7 @@ async def delete_post(
     response_model=PaginatedPostsOutput,
 )
 async def list_public_posts(
-    operation: PostsOperationDep,
+    operation: PostsServiceDep,
     pagination: PaginationDep,
     search: str | None = None,
     author_id: UUID | None = None,

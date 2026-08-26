@@ -1,29 +1,38 @@
 from typing import Annotated
+
 from fastapi import Depends
 
-from operations.users import UsersOperation
-from dependencies.repositories import UserRepositoryDep
+from dependencies.unit_of_work import UnitOfWorkDep
 
-from operations.posts import PostsOperation
-from dependencies.repositories import PostRepositoryDep
+from services.users import UsersOperation
+from services.posts import PostsService
+
+from dependencies.cache import CacheDep
 
 
 def get_users_operation(
-    user_repository: UserRepositoryDep,
+    uow: UnitOfWorkDep,
 ) -> UsersOperation:
-    return UsersOperation(user_repository)
+    return UsersOperation(uow)
 
 
-UsersOperationDep = Annotated[UsersOperation, Depends(get_users_operation)]
+UsersOperationDep = Annotated[
+    UsersOperation,
+    Depends(get_users_operation),
+]
 
 
-def get_posts_operation(
-    post_repository: PostRepositoryDep,
-) -> PostsOperation:
-    return PostsOperation(post_repository)
+def get_posts_service(
+    uow: UnitOfWorkDep,
+    cache: CacheDep,
+) -> PostsService:
+    return PostsService(
+        uow=uow,
+        cache=cache,
+    )
 
 
-PostsOperationDep = Annotated[
-    PostsOperation,
-    Depends(get_posts_operation),
+PostsServiceDep = Annotated[
+    PostsService,
+    Depends(get_posts_service),
 ]
